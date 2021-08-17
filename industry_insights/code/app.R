@@ -4,39 +4,23 @@
 ###########################################################################
 
 ## Load the packages
-if (!require(shiny)) {install.packages("shiny"); require(shiny)}
-if (!require(ggplot2)) {install.packages("ggplot2"); require(ggplot2)}
-if (!require(shinythemes)) {install.packages("shinythemes"); require(shinythemes)}
-if (!require(dplyr)) {install.packages("dplyr"); require(dplyr)}
-if (!require(readr)) {install.packages("readr"); require(readr)}
-if (!require(colorspace)) {install.packages("colorspace"); require(colorspace)}
-if (!require(tidyr)) {install.packages("tidyr"); require(tidyr)}
-if (!require(plotly)) {install.packages("plotly"); require(plotly)}
-if (!require(png)) {install.packages("png"); require(png)}
-if (!require(shinyWidgets)) {install.packages("shinyWidgets"); require(shinyWidgets)}
-if (!require(gifski)) {install.packages("gifski"); require(gifski)}
-if (!require(gganimate)) {install.packages("gganimate"); require(gganimate)}
-if (!require(extrafont)) {install.packages("extrafont"); require(extrafont)}
+library(shiny)
+library(ggplot2)
+library(shinythemes)
+library(dplyr)
+library(readr)
+library(colorspace)
+library(tidyr)
+library(png)
+library(shinyWidgets)
+library(gifski)
+library(gganimate)
+library(extrafont)
+library(readxl)
 
 
 ## Set working directory for data used in the charts
 setwd("~/menti/industry_insights")
-
-
-# ## How do I render a plot?
-# output$PLOTNAME <- renderPlot({
-#   ggplot(reactivePager(), aes(x = black_use, y = callback, fill = black_use)) + 
-#     geom_bar(stat = "identity",  width = .8, alpha = .75)
-# })  
-# 
-# ## How do I make a reactive dataframe?
-# reactivePager <- reactive({return(tbl_df(Pager_data) %>%
-#                                     filter(job_type == input$jobType) ## filtering our data based on an input
-# )})
-# 
-# ## can then use this df to create a reactive table
-# output$dfPager <- renderTable({reactivePager()})
-
 
 ## Import the data - BLS OOH
 industry_data <- read_excel("data/occupation.xlsx", sheet="Table 1.7", col_names=T, skip=1)
@@ -77,29 +61,9 @@ industry_data$Industry <- factor(industry_data$Industry, levels = c("Management"
 
 
 
-#############################################################
+##########################
 ## Shiny app
-#############################################################
-# ui <- fluidPage(
-#   
-#   # App title ----
-#   titlePanel("Title of your app"),
-#   
-#   # Sidebar layout with input and output definitions ----
-#   sidebarLayout(
-#     
-#     tabPanel(),
-#     
-#     # Main panel for displaying outputs ----
-#     mainPanel(
-#       
-#       # Output: Histogram ----
-#       plotOutput(outputId = "distPlot") 
-#       
-#     )
-#   )
-# )
-
+##########################
 # Use taglist layout - this allows us to have multiple navigation tabs
 ui = tagList(
   
@@ -110,7 +74,6 @@ ui = tagList(
   tags$br(),
   
   navbarPage("  ", id="nav", position = "fixed-bottom",
-             #make something italics: tags$em("Boston Edition.")
              #Define first navigation panel
              tabPanel(
                
@@ -288,6 +251,15 @@ server <- function(input, output){
                                     )})
   
   output$Industry_df <- renderTable({reactiveDfIndustry()})
+  
+  reactiveIndustry <- reactive({return(tbl_df(industry_data) %>%
+                                         filter(Industry == input$Industry) %>%
+                                         filter(education_needed == input$education_needed) %>%
+                                         filter(work_experience == input$work_experience) %>%
+                                         filter(ind_growth == input$ind_growth) %>%
+                                         filter(wage_buckets == input$wage_buckets))})
+  
+  output$dfInd <- renderTable({reactiveIndustry()})
   
 }
 
