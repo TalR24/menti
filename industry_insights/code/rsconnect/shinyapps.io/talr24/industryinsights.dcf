@@ -5,10 +5,10 @@ account: talr24
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 4503608
-bundleId: 4933779
+bundleId: 4934032
 url: https://talr24.shinyapps.io/industryinsights/
-when: 1629227408.38866
-lastSyncTime: 1629227408.38866
+when: 1629233482.03421
+lastSyncTime: 1629233482.03421
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: charts.R|readme.md

@@ -28,7 +28,7 @@ industry_data <- read_excel("occupation.xlsx", sheet="Table 1.7", col_names=T, s
 
 ## Clean the data
 industry_data <- industry_data %>%
-  filter(!is.na(emp_2019) | occ_title=="Total, all occupations")
+  filter(!is.na(emp_2019))
 
 industry_data <- industry_data %>%
   mutate(ind_growth =
@@ -70,7 +70,7 @@ industry_data <- industry_data %>%
 ui = tagList(
   
   fluidPage(
-    column(12,offset = 0, titlePanel("Industry Insights", windowTitle = "Industry Insights")),
+    column(12,offset = 0, titlePanel(tags$em("Industry Insights"), windowTitle = "Industry Insights")),
     tags$style(HTML("a {color: #FA6900}"))
   ),
   tags$br(),
@@ -95,8 +95,8 @@ ui = tagList(
                         }'))),
                             
                             #Create checkbox inputs
-                            p(tags$strong("Explore the data on jobs!"), color = "black"),
-                            helpText("Select the filters below to compare employment, wages, and other characteristics among different industries.", color = "black"),
+                            p(tags$strong("Explore the data and compare jobs in different industries!"), color = "black"),
+                            helpText("Select the filters below to compare employment, wages, and other characteristics among jobs in collections of industries.", color = "black"),
                             tags$br(),
                             selectInput(inputId = "Industry", label = "Industry", choices = c("Management", "Business and financial operations", 
                                                                                              "Computer and mathematical", "Architecture and engineering", "Life, physical, and social science", 
@@ -111,16 +111,16 @@ ui = tagList(
                                         "Management", multiple = FALSE),
                             
                             tags$br(),
-                            radioButtons(inputId = "education_needed", label = "Typical Education Requirement", choices = c("None" = "—", "High School Diploma" = "High school diploma or equivalent", 
+                            radioButtons(inputId = "education_needed", label = "Typical Education Requirement", choices = c("No requirement" = "—", "High School Diploma" = "High school diploma or equivalent", 
                                                                                                                             "Bachelor's degree" = "Bachelor's degree", "Post-High School Training" = "Postsecondary nondegree award", 
-                                                                                                                            "None" = "No formal educational credential", "Master's degree" = "Master's degree", 
-                                                                                                                            "Associate's degree" = "Associate's degree", "Some College" = "Some college, no degree", 
+                                                                                                                            "Master's degree" = "Master's degree", "Associate's degree" = "Associate's degree", 
+                                                                                                                            "Some College" = "Some college, no degree", 
                                                                                                                             "Advanced degree" = "Doctoral or professional degree"), selected = NULL,
                                          inline = FALSE, width = NULL, choiceNames = NULL,
                                          choiceValues = NULL),
                             tags$br(),
-                            radioButtons(inputId = "work_experience", label = "Work Experience Requirement", choices = c("None" = "—", "Less than 5 years" = "Less than 5 years", 
-                                                                                                                            "5 years or more" = "5 years or more", "None" = "None"), selected = NULL,
+                            radioButtons(inputId = "work_experience", label = "Work Experience Requirement", choices = c("No requirement" = "—", "Less than 5 years" = "Less than 5 years", 
+                                                                                                                            "5 years or more" = "5 years or more"), selected = NULL,
                                          inline = FALSE, width = NULL, choiceNames = NULL,
                                          choiceValues = NULL),
                             
@@ -151,20 +151,12 @@ ui = tagList(
                  
                  tabsetPanel(type = "tabs",
                              tabPanel(
-                               "About Industry Insights", 
+                               "Summary", 
                                tags$br(),
                                p("I will provide a short intro to industry insights here. Probably put some main summary charts below", "Using the inputs on the left (I will provide basic instructions here)", tags$strong(tags$em("explore the findings for yourself."))), 
                                tags$br(),
                                p("Then", tags$strong("visualize"), "the data in the 'Visualize' tab or", tags$strong("get right to the numbers"), "with the 'Numbers' tab."),
-                               
-                               
-                               tags$br(),
-                               
-                               p("Still itching for more? Check out our Industry Tables:", a("In-depth interviews with professionals from all types of industries", href = "https://www.menti.club/career-explore")),
-                               img(src="IG Fresh Menu.png", align = "left",  height="65%", width="65%"),
-                               p(),
-                               p("If Vanessa wants to make anything I can include further images/links/infographics here")
-                             ),
+                               tags$br()),
                              
                              tabPanel("Visualize",
                                       
@@ -175,19 +167,26 @@ ui = tagList(
                                       p("   "),
                                       
                                       plotOutput("empGrowth_plot"),
+                                      tags$br(),
                                       plotOutput("wages_plot"),
-                                        tags$br(),
-                                        p("Does something surprise you here?"),
-                                        p("Devah found that", tags$strong("black applicants"), "with", tags$strong("clean records"), "were seen as", tags$u("equivalent"), "to",  tags$strong("white applicants"), "who had just been", 
-                                          tags$strong("released from prison."))),
+                                        tags$br()),
                              
                              
-                             tabPanel("The Numbers",
+                             tabPanel("Data",
                                       column(6,offset = 2,
                                              p(),
-                                             tableOutput("Industry_df"))
-                                             
-                                      ))
+                                             tableOutput("Industry_df"))),
+                            
+                            
+                            tabPanel("Industry Tables", 
+                                        tags$br(),
+                                        p("Still itching for more? Check out our Industry Tables:", a("In-depth interviews with professionals from all types of industries", href = "https://www.menti.club/career-explore")),
+                                        tags$br(),
+                                        img(src="IG Fresh Menu.png", align = "left",  height="65%", width="65%"),
+                                        tags$br(),
+                                        p("If Vanessa wants to make anything I can include further images/links/infographics here")
+                                      )
+                                      )
                              
                              
                  )
@@ -230,7 +229,8 @@ server <- function(input, output){
     ggplot(reactiveIndustry(), aes(x=reorder(occ_title, emp_change_pct_2019_2029), y=emp_change_pct_2019_2029)) + 
       geom_bar(stat="identity") + theme_fivethirtyeight() + coord_flip() + 
       labs(title="Projected Employment Growth, 2019-2029") + 
-      theme(plot.title = element_text(hjust=0.5, size=16), axis.text.x = element_text(face="bold", size=10)) + 
+      theme(plot.title = element_text(hjust=0.5, size=20), axis.text.x = element_text(face="bold", size=12), 
+            axis.text.y = element_text(size=12)) + 
       scale_y_continuous(labels = function(x) paste0(x, "%")) + 
       scale_color_brewer(type="seq", palette="Oranges")
   })  
@@ -239,8 +239,9 @@ server <- function(input, output){
     
     ggplot(reactiveIndustry(), aes(x=reorder(occ_title, median_annual_wage_2020), y=median_annual_wage_2020)) + 
       geom_bar(stat="identity") + theme_fivethirtyeight() + coord_flip() + 
-      labs(title="2020 Median Annual Wage") + 
-      theme(plot.title = element_text(hjust=0.5, size=16), axis.text.x = element_text(face="bold", size=10)) + 
+      labs(title="Median Yearly Income, 2020") + 
+      theme(plot.title = element_text(hjust=0.5, size=20), axis.text.x = element_text(face="bold", size=12), 
+            axis.text.y = element_text(size=12)) + 
       scale_y_continuous(labels = function(x) paste0("$", x))
   }) 
   
@@ -252,9 +253,10 @@ server <- function(input, output){
                                    filter(ind_growth == input$ind_growth) %>%
                                    filter(wage_buckets == input$wage_buckets) %>%
                                    group_by(occ_title) %>%
-                                   summarise("Average Employment Growth, 2019-2029" = mean(emp_change_2019_2029),
-                                   "Average Employment Growth (%), 2019-2029" = mean(emp_change_pct_2019_2029),
-                                   "Average Yearly Income, 2020" = mean(median_annual_wage_2020))
+                                   summarise("Number Employed, 2019" = mean(emp_2019*1000),
+                                    "Employment Change (#), 2019-2029" = mean(emp_change_2019_2029*1000),
+                                   "Employment Change (%), 2019-2029" = mean(emp_change_pct_2019_2029),
+                                   "Yearly Income, 2020" = mean(median_annual_wage_2020))
                                     )})
   
   output$Industry_df <- renderTable({reactiveDfIndustry()})
