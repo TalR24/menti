@@ -1,6 +1,6 @@
 ## app.R
 ## Shiny R app - creates interactive tabs by industry charts and tables
-## Last edited 7/27/21 by Tal Roded
+## Last edited 8/17/21 by Tal Roded
 ###########################################################################
 
 ## Load the packages
@@ -8,7 +8,7 @@ library(shiny)
 library(ggplot)
 
 ## Set working directory for data used in the charts
-setwd()
+setwd("~/menti/industry_insights")
 
 
 ## How do I render a plot?
@@ -25,6 +25,9 @@ reactivePager <- reactive({return(tbl_df(Pager_data) %>%
 ## can then use this df to create a reactive table
 output$dfPager <- renderTable({reactivePager()})
 
+
+
+
 ## Shiny app
 ui <- fluidPage(
   
@@ -40,7 +43,7 @@ ui <- fluidPage(
     mainPanel(
       
       # Output: Histogram ----
-      plotOutput(outputId = "distPlot") ## but what is this plot?? 
+      plotOutput(outputId = "distPlot") 
       
     )
   )
