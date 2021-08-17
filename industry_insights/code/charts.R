@@ -57,22 +57,8 @@ state <- stateInput
 
 lifeEarning <- (67-ageInput)*medianIncomeState
 
-
-
-### Filter buttons
-
-radioButtons(inputId = "compare_across", "Choose your industry filters",
-             choices = c("Industry" = "occ_titles",
-                         "Growth" = "emp_change_pct",
-                         "Wage" = "median_annual_wage_2020",
-                         "Education" = "edu_req",
-                         "Work Experience" = "work_exp"))
 output$text_use <- renderText({
   paste("You chose", input$compare_across)
-})
-
-formulaText <- reactive(function() {
-  paste("Rates of Callback by", input$compare_across)
 })
 
 

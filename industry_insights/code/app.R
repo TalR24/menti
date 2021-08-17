@@ -4,8 +4,20 @@
 ###########################################################################
 
 ## Load the packages
-library(shiny)
-library(ggplot)
+if (!require(shiny)) {install.packages("shiny"); require(shiny)}
+if (!require(ggplot2)) {install.packages("ggplot2"); require(ggplot2)}
+if (!require(shinythemes)) {install.packages("shinythemes"); require(shinythemes)}
+if (!require(dplyr)) {install.packages("dplyr"); require(dplyr)}
+if (!require(readr)) {install.packages("readr"); require(readr)}
+if (!require(colorspace)) {install.packages("colorspace"); require(colorspace)}
+if (!require(tidyr)) {install.packages("tidyr"); require(tidyr)}
+if (!require(plotly)) {install.packages("plotly"); require(plotly)}
+if (!require(png)) {install.packages("png"); require(png)}
+if (!require(shinyWidgets)) {install.packages("shinyWidgets"); require(shinyWidgets)}
+if (!require(gifski)) {install.packages("gifski"); require(gifski)}
+if (!require(gganimate)) {install.packages("gganimate"); require(gganimate)}
+if (!require(extrafont)) {install.packages("extrafont"); require(extrafont)}
+
 
 ## Set working directory for data used in the charts
 setwd("~/menti/industry_insights")
@@ -40,7 +52,28 @@ industry_data <- industry_data %>%
              emp_change_pct_2019_2029 <0 ~ 0
            )) 
 
+industry_data <- industry_data %>%
+  mutate(wage_buckets =
+           case_when(
+             median_annual_wage_2020>0 & median_annual_wage_2020<33333 ~ "Less than $33,333", 
+             median_annual_wage_2020>=33333 & median_annual_wage_2020<66666 ~ "Between $33,333 & $66,666", 
+             median_annual_wage_2020>=66666 & median_annual_wage_2020<99999 ~ "Between $66,666 & $100,000", 
+             median_annual_wage_2020>=99999 & median_annual_wage_2020<133333 ~ "Between $100,000 & $133,333", 
+             median_annual_wage_2020>=133333 & median_annual_wage_2020<166666 ~ "Between $133,333 & $166,666",
+             median_annual_wage_2020>=166666 & median_annual_wage_2020<199999 ~ "Between $166,666 & $200,000",
+             median_annual_wage_2020>199999 ~ "More than $200,000"
+)) 
 
+industry_data$Industry <- factor(industry_data$Industry, levels = c("Management", "Business and financial operations", 
+                                 "Computer and mathematical", "Architecture and engineering", "Life, physical, and social science", 
+                                 "Community and social service",
+                                 "Legal", "Educational instruction and library", "Arts, design, entertainment, sports, and media",
+                                 "Healthcare practitioners and technical", "Healthcare support", 
+                                 "Protective service", "Food preparation and serving related", 
+                                 "Building and grounds cleaning and maintenance", "Personal care and service", 
+                                 "Sales and related", "Office and administrative support", 
+                                 "Farming, fishing, and forestry", "Construction and extraction", 
+                                 "Installation, maintenance, and repair", "Production", "Transportation and material moving"))
 
 
 
@@ -100,7 +133,7 @@ ui = tagList(
                             p(tags$strong("Explore the data on jobs!"), color = "black"),
                             helpText("Select the filters below to compare employment, wages, and other characteristics among different industries.", color = "black"),
                             tags$br(),
-                            selectInput(inputId = "Industry", "Industry", c("Management" = "Management", "Business & Finance" = "Business and financial operations", 
+                            selectInput(inputId = "Industry", label = "Industry", choices = c("Management" = "Management", "Business & Finance" = "Business and financial operations", 
                                           "Computer Science & Math" = "Computer and mathematical", "Architecture & Engineering" = "Architecture and engineering", 
                                           "Sciences" = "Life, physical, and social science", "Community & Social Service" = "Community and social service",
                                           "Law" = "Legal", "Teaching" = "Educational instruction and library", "Arts & Media & Entertainment" = "Arts, design, entertainment, sports, and media",
@@ -111,28 +144,38 @@ ui = tagList(
                                           "Farming & Forestry" = "Farming, fishing, and forestry", "Construction & Mining" = "Construction and extraction", 
                                           "Repair" = "Installation, maintenance, and repair", "Production" = "Production", "Transportation" = "Transportation and material moving"), 
                                         "Management", multiple = FALSE),
-                            tags$br(),
-                            selectInput(inputId = "education_needed", "Typical Education Requirement", c("None" = "—", "High School Diploma" = "High school diploma or equivalent", 
-                                                                                                         "Bachelor's degree" = "Bachelor's degree", "Post-High School Training" = "Postsecondary nondegree award", 
-                                                                                                         "None" = "No formal educational credential", "Master's degree" = "Master's degree", 
-                                                                                                         "Associate's degree" = "Associate's degree", ""), "black_mutate", multiple = FALSE),
                             
                             tags$br(),
+                            radioButtons(inputId = "education_needed", label = "Typical Education Requirement", choices = c("None" = "—", "High School Diploma" = "High school diploma or equivalent", 
+                                                                                                                            "Bachelor's degree" = "Bachelor's degree", "Post-High School Training" = "Postsecondary nondegree award", 
+                                                                                                                            "None" = "No formal educational credential", "Master's degree" = "Master's degree", 
+                                                                                                                            "Associate's degree" = "Associate's degree", "Some College" = "Some college, no degree", 
+                                                                                                                            "Advanced degree" = "Doctoral or professional degree"), selected = NULL,
+                                         inline = FALSE, width = NULL, choiceNames = NULL,
+                                         choiceValues = NULL),
+                            tags$br(),
+                            radioButtons(inputId = "work_experience", label = "Work Experience Requirement", choices = c("None" = "—", "Less than 5 years" = "Less than 5 years", 
+                                                                                                                            "5 years or more" = "5 years or more", "None" = "None"), selected = NULL,
+                                         inline = FALSE, width = NULL, choiceNames = NULL,
+                                         choiceValues = NULL),
                             
-                            
+                            tags$br(),
                             radioButtons(inputId = "ind_growth", label = "Is it a growing industry?", choices = c("Yes" = "1", "No" = "0"), selected = NULL,
                                          inline = FALSE, width = NULL, choiceNames = NULL,
                                          choiceValues = NULL),
                             
                             tags$br(),
-                            p("Requirements", color = "black"),
-                            checkboxInput(inputId = "manualskill", label = "Manual Labor", value = TRUE),
-                            checkboxInput(inputId = "customserv", label = "Customer Service", value = TRUE),
+                            radioButtons(inputId = "wage_buckets", label = "Average Yearly Income in 2020", choices = c("Less than $33,333" = "Less than $33,333", "Between $33,333 & $66,666" = "Between $33,333 & $66,666", 
+                                                                                                                        "Between $66,666 & $100,000" = "Between $66,666 & $100,000", "Between $100,000 & $133,333" = "Between $100,000 & $133,333", 
+                                                                                                                        "Between $133,333 & $166,666" = "Between $133,333 & $166,666", "Between $166,666 & $200,000" = "Between $166,666 & $200,000", 
+                                                                                                                        "More than $200,000" = "More than $200,000"), selected = NULL,
+                                         inline = FALSE, width = NULL, choiceNames = NULL,
+                                         choiceValues = NULL),
                             
                             
                             #Add text to interactivity bar
-                            helpText("This interactive app was created with data from", a("Pager, 2002", 
-                                                                                          href="https://davisvanguard.org/wp-content/uploads/2013/07/pager_ajs.pdf")), 
+                            helpText("This interactive app was created with data from", a("the US Bureau of Labor Statistics", 
+                                                                                          href="https://www.bls.gov/ooh/")), 
                             
                             
                             #Download Button
@@ -143,17 +186,18 @@ ui = tagList(
                  
                  tabsetPanel(type = "tabs",
                              tabPanel(
-                               "About the Demo (Start here!)", 
+                               "About Industry Insights", 
                                tags$br(),
-                               p("In 2003, Devah Pager, wanted to explore how having a criminal record affects hireability.", "Using the inputs on the left", tags$strong(tags$em("explore the findings for yourself."))), 
+                               p("I will provide a short intro to industry insights here. Probably put some main summary charts below", "Using the inputs on the left (I will provide basic instructions here)", tags$strong(tags$em("explore the findings for yourself."))), 
                                tags$br(),
                                p("Then", tags$strong("visualize"), "the data in the 'Visualize' tab or", tags$strong("get right to the numbers"), "with the 'Numbers' tab."),
                                
                                
                                tags$br(),
                                
-                               p("Still itching for more? Listen to our podcast,", a("Race bias in hiring: when both applicant and employer lose.", href = "https://outsmartinghumanminds.org/module/race-bias-in-hiring/")),
-                               img(src="pager_picture.png", align = "left",  height="65%", width="65%", href = "https://outsmartinghumanminds.org/module/race-bias-in-hiring/")
+                               p("Still itching for more? Check out our Industry Tables:", a("In-depth interviews with professionals from all types of industries", href = "https://www.menti.club/career-explore")),
+                               img(src="IG Fresh Menu.png", align = "left",  height="65%", width="65%"),
+                               p("If Vanessa wants to make anything I can include further images/links/infographics here")
                              ),
                              
                              tabPanel("Visualize",
@@ -165,14 +209,11 @@ ui = tagList(
                                       p("   "),
                                       
                                       conditionalPanel(
-                                        condition = "input.compare_across == 'black_mutate'",
-                                        plotOutput("Race_plot")),
+                                        condition = "input.Industry == 'Industry'",
+                                        plotOutput("empGrowth_plot")),
                                       conditionalPanel(
-                                        condition = "input.compare_across == 'crim_record_mutate'",
-                                        plotOutput("Crimrec_plot")),
-                                      conditionalPanel(
-                                        condition = "input.compare_across == 'race_crim_mutate'",
-                                        plotOutput("Race_crim_plot"),
+                                        condition = "input.Industry == 'Industry'",
+                                        plotOutput("wages_plot")),
                                         tags$br(),
                                         p("Does something surprise you here?"),
                                         p("Devah found that", tags$strong("black applicants"), "with", tags$strong("clean records"), "were seen as", tags$u("equivalent"), "to",  tags$strong("white applicants"), "who had just been", tags$strong("released from prison.")))),
@@ -182,15 +223,8 @@ ui = tagList(
                                       column(6,offset = 2,
                                              p(),
                                              conditionalPanel(
-                                               p(),
-                                               condition = "input.compare_across == 'race_crim_mutate'",
-                                               tableOutput("dfracecrim")),
-                                             conditionalPanel(
-                                               condition = "input.compare_across == 'black_mutate'",
-                                               tableOutput("dfblack")),
-                                             conditionalPanel(
-                                               condition = "input.compare_across == 'crim_record_mutate'",
-                                               tableOutput("dfcrim"))
+                                               condition = "input.Industry == 'Industry'",
+                                               tableOutput("Industry_df"))
                                              
                                       ))
                              
@@ -201,22 +235,61 @@ ui = tagList(
              
              
   )
-)
 
 
 
-server <- function(input, output) {
+
+####################
+## Server Side 
+####################
+server <- function(input, output){
   
-  ## We create the plot here, in the server
-  output$distPlot <- renderPlot({
-    
-    hist(x, breaks = bins, col = "#75AADB", border = "white",
-         xlab = "Waiting time to next eruption (in mins)",
-         main = "Histogram of waiting times")
-    
+  formulaText <- reactive(function() {
+    paste("You chose", input$Industry)
   })
+  
+  # Return the formula text for printing as a caption
+  output$caption <- renderText(function() {
+    formulaText()
+  })
+  
+  #
+  
+  output$empGrowth_plot <- renderPlot({
+    
+    ggplot(reactiveIndustry, aes(x=reorder(occ_titles, emp_change_pct_2019_2029), y=emp_change_pct_2019_2029)) + 
+      geom_bar(stat="identity") + theme_fivethirtyeight() + coord_flip() + 
+      labs(title="Projected Employment Growth, 2019-2029") + 
+      theme(plot.title = element_text(hjust=0.5, size=16), axis.text.x = element_text(face="bold", size=10)) + 
+      scale_y_continuous(labels = function(x) paste0(x, "%")) + 
+      scale_color_brewer(type="seq", palette="Oranges")
+  })  
+  
+  output$wages_plot <- renderPlot({
+    
+    ggplot(reactiveIndustry, aes(x=reorder(occ_titles, median_annual_wage_2020), y=median_annual_wage_2020)) + 
+      geom_bar(stat="identity") + theme_fivethirtyeight() + coord_flip() + 
+      labs(title="2020 Median Annual Wage") + 
+      theme(plot.title = element_text(hjust=0.5, size=16), axis.text.x = element_text(face="bold", size=10)) + 
+      scale_y_continuous(labels = function(x) paste0("$", x))
+  }) 
+  
+  
+  reactiveDfIndustry <- reactive({return(tbl_df(industry_data) %>% 
+                                   filter(Industry == input$Industry) %>%
+                                   filter(education_needed == input$education_needed) %>%
+                                   filter(work_experience == input$work_experience) %>%
+                                   filter(ind_growth == input$ind_growth) %>%
+                                   filter(wage_buckets == input$wage_buckets) %>%
+                                   group_by("Industry" = Industry) %>%
+                                   dplyr::summarize("Average Employment Growth, 2019-2029" = mean(emp_change_2019_2029)),
+                                   dplyr::summarize("Average Employment Growth (%), 2019-2029" = mean(emp_change_pct_2019_2029)), 
+                                   dplyr::summarize("Average Yearly Income, 2020" = mean(median_annual_wage_2020))
+                                    )})
+  
+  output$Industry_df <- renderTable({reactiveDfIndustry()})
   
 }
 
-shinyApp(ui = ui, server = server)
+shinyApp(ui=ui, server=server) 
 
