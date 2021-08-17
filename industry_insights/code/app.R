@@ -21,10 +21,10 @@ library(ggthemes)
 library(RColorBrewer)
 
 ## Set working directory for data used in the charts
-setwd("~/menti/industry_insights")
+# setwd("~/menti/industry_insights")
 
 ## Import the data - BLS OOH
-industry_data <- read_excel("data/occupation.xlsx", sheet="Table 1.7", col_names=T, skip=1)
+industry_data <- read_excel("occupation.xlsx", sheet="Table 1.7", col_names=T, skip=1)
 
 ## Clean the data
 industry_data <- industry_data %>%
@@ -251,7 +251,7 @@ server <- function(input, output){
                                    filter(work_experience == input$work_experience) %>%
                                    filter(ind_growth == input$ind_growth) %>%
                                    filter(wage_buckets == input$wage_buckets) %>%
-                                   #group_by(Industry) %>%
+                                   group_by(occ_title) %>%
                                    summarise("Average Employment Growth, 2019-2029" = mean(emp_change_2019_2029),
                                    "Average Employment Growth (%), 2019-2029" = mean(emp_change_pct_2019_2029),
                                    "Average Yearly Income, 2020" = mean(median_annual_wage_2020))

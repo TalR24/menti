@@ -1,0 +1,14 @@
+name: industryinsights
+title: industryinsights
+username:
+account: talr24
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4503608
+bundleId: 4933779
+url: https://talr24.shinyapps.io/industryinsights/
+when: 1629227408.38866
+lastSyncTime: 1629227408.38866
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: charts.R|readme.md
