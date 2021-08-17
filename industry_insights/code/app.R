@@ -17,7 +17,8 @@ library(gifski)
 library(gganimate)
 library(extrafont)
 library(readxl)
-
+library(ggthemes)
+library(RColorBrewer)
 
 ## Set working directory for data used in the charts
 setwd("~/menti/industry_insights")
@@ -59,7 +60,8 @@ industry_data$Industry <- factor(industry_data$Industry, levels = c("Management"
                                  "Farming, fishing, and forestry", "Construction and extraction", 
                                  "Installation, maintenance, and repair", "Production", "Transportation and material moving"))
 
-
+industry_data <- industry_data %>%
+  filter(!is.na(Industry))
 
 ##########################
 ## Shiny app
@@ -96,16 +98,16 @@ ui = tagList(
                             p(tags$strong("Explore the data on jobs!"), color = "black"),
                             helpText("Select the filters below to compare employment, wages, and other characteristics among different industries.", color = "black"),
                             tags$br(),
-                            selectInput(inputId = "Industry", label = "Industry", choices = c("Management" = "Management", "Business & Finance" = "Business and financial operations", 
-                                          "Computer Science & Math" = "Computer and mathematical", "Architecture & Engineering" = "Architecture and engineering", 
-                                          "Sciences" = "Life, physical, and social science", "Community & Social Service" = "Community and social service",
-                                          "Law" = "Legal", "Teaching" = "Educational instruction and library", "Arts & Media & Entertainment" = "Arts, design, entertainment, sports, and media",
-                                          "Healthcare" = "Healthcare practitioners and technical", "Healthcare Support" = "Healthcare support", 
-                                          "Public Service" = "Protective service", "Culinary & Food Prep" = "Food preparation and serving related", 
-                                          "Maintenance" = "Building and grounds cleaning and maintenance", "Personal Care Services" = "Personal care and service", 
-                                          "Sales" = "Sales and related", "Office & Administrative" = "Office and administrative support", 
-                                          "Farming & Forestry" = "Farming, fishing, and forestry", "Construction & Mining" = "Construction and extraction", 
-                                          "Repair" = "Installation, maintenance, and repair", "Production" = "Production", "Transportation" = "Transportation and material moving"), 
+                            selectInput(inputId = "Industry", label = "Industry", choices = c("Management", "Business and financial operations", 
+                                                                                             "Computer and mathematical", "Architecture and engineering", "Life, physical, and social science", 
+                                                                                             "Community and social service",
+                                                                                             "Legal", "Educational instruction and library", "Arts, design, entertainment, sports, and media",
+                                                                                             "Healthcare practitioners and technical", "Healthcare support", 
+                                                                                             "Protective service", "Food preparation and serving related", 
+                                                                                             "Building and grounds cleaning and maintenance", "Personal care and service", 
+                                                                                             "Sales and related", "Office and administrative support", 
+                                                                                             "Farming, fishing, and forestry", "Construction and extraction", 
+                                                                                             "Installation, maintenance, and repair", "Production", "Transportation and material moving"), 
                                         "Management", multiple = FALSE),
                             
                             tags$br(),
@@ -160,6 +162,7 @@ ui = tagList(
                                
                                p("Still itching for more? Check out our Industry Tables:", a("In-depth interviews with professionals from all types of industries", href = "https://www.menti.club/career-explore")),
                                img(src="IG Fresh Menu.png", align = "left",  height="65%", width="65%"),
+                               p(),
                                p("If Vanessa wants to make anything I can include further images/links/infographics here")
                              ),
                              
@@ -171,23 +174,18 @@ ui = tagList(
                                       
                                       p("   "),
                                       
-                                      conditionalPanel(
-                                        condition = "input.Industry == 'Industry'",
-                                        plotOutput("empGrowth_plot")),
-                                      conditionalPanel(
-                                        condition = "input.Industry == 'Industry'",
-                                        plotOutput("wages_plot")),
+                                      plotOutput("empGrowth_plot"),
+                                      plotOutput("wages_plot"),
                                         tags$br(),
                                         p("Does something surprise you here?"),
-                                        p("Devah found that", tags$strong("black applicants"), "with", tags$strong("clean records"), "were seen as", tags$u("equivalent"), "to",  tags$strong("white applicants"), "who had just been", tags$strong("released from prison.")))),
+                                        p("Devah found that", tags$strong("black applicants"), "with", tags$strong("clean records"), "were seen as", tags$u("equivalent"), "to",  tags$strong("white applicants"), "who had just been", 
+                                          tags$strong("released from prison."))),
                              
                              
                              tabPanel("The Numbers",
                                       column(6,offset = 2,
                                              p(),
-                                             conditionalPanel(
-                                               condition = "input.Industry == 'Industry'",
-                                               tableOutput("Industry_df"))
+                                             tableOutput("Industry_df"))
                                              
                                       ))
                              
@@ -218,9 +216,18 @@ server <- function(input, output){
   
   #
   
+  reactiveIndustry <- reactive({return(tbl_df(industry_data) %>%
+                                         filter(Industry == input$Industry) %>%
+                                         filter(education_needed == input$education_needed) %>%
+                                         filter(work_experience == input$work_experience) %>%
+                                         filter(ind_growth == input$ind_growth) %>%
+                                         filter(wage_buckets == input$wage_buckets))})
+  
+  output$dfInd <- renderTable({reactiveIndustry()})
+  
   output$empGrowth_plot <- renderPlot({
     
-    ggplot(reactiveIndustry, aes(x=reorder(occ_titles, emp_change_pct_2019_2029), y=emp_change_pct_2019_2029)) + 
+    ggplot(reactiveIndustry(), aes(x=reorder(occ_title, emp_change_pct_2019_2029), y=emp_change_pct_2019_2029)) + 
       geom_bar(stat="identity") + theme_fivethirtyeight() + coord_flip() + 
       labs(title="Projected Employment Growth, 2019-2029") + 
       theme(plot.title = element_text(hjust=0.5, size=16), axis.text.x = element_text(face="bold", size=10)) + 
@@ -230,7 +237,7 @@ server <- function(input, output){
   
   output$wages_plot <- renderPlot({
     
-    ggplot(reactiveIndustry, aes(x=reorder(occ_titles, median_annual_wage_2020), y=median_annual_wage_2020)) + 
+    ggplot(reactiveIndustry(), aes(x=reorder(occ_title, median_annual_wage_2020), y=median_annual_wage_2020)) + 
       geom_bar(stat="identity") + theme_fivethirtyeight() + coord_flip() + 
       labs(title="2020 Median Annual Wage") + 
       theme(plot.title = element_text(hjust=0.5, size=16), axis.text.x = element_text(face="bold", size=10)) + 
@@ -244,22 +251,14 @@ server <- function(input, output){
                                    filter(work_experience == input$work_experience) %>%
                                    filter(ind_growth == input$ind_growth) %>%
                                    filter(wage_buckets == input$wage_buckets) %>%
-                                   group_by("Industry" = Industry) %>%
-                                   dplyr::summarize("Average Employment Growth, 2019-2029" = mean(emp_change_2019_2029)),
-                                   dplyr::summarize("Average Employment Growth (%), 2019-2029" = mean(emp_change_pct_2019_2029)), 
-                                   dplyr::summarize("Average Yearly Income, 2020" = mean(median_annual_wage_2020))
+                                   #group_by(Industry) %>%
+                                   summarise("Average Employment Growth, 2019-2029" = mean(emp_change_2019_2029),
+                                   "Average Employment Growth (%), 2019-2029" = mean(emp_change_pct_2019_2029),
+                                   "Average Yearly Income, 2020" = mean(median_annual_wage_2020))
                                     )})
   
   output$Industry_df <- renderTable({reactiveDfIndustry()})
-  
-  reactiveIndustry <- reactive({return(tbl_df(industry_data) %>%
-                                         filter(Industry == input$Industry) %>%
-                                         filter(education_needed == input$education_needed) %>%
-                                         filter(work_experience == input$work_experience) %>%
-                                         filter(ind_growth == input$ind_growth) %>%
-                                         filter(wage_buckets == input$wage_buckets))})
-  
-  output$dfInd <- renderTable({reactiveIndustry()})
+
   
 }
 
